@@ -1,1 +1,41 @@
-/* Blah Blah Blah */
+:root {
+  /* From Material UI: https://materialui.co/colors */
+  --primary-background: #fff;
+  --secondary-background: #FAFAFA; /* gray 50 */
+  --shadow-color: #B0BEC5; /* blue gray 200 */
+  --text-color: #37474F; /* blue gray 800 */
+}
+
+* {
+  box-sizing: border-box;
+  color: var(--text-color);
+}
+
+body {
+  width: auto;
+  height: 100vh;
+  background: var(--primary-background);
+}
+
+.group-list {
+  width: auto;
+  height: auto;
+
+  display: flex;
+  flex-direction: row;
+  justify-content: space-evenly;
+  gap: 1rem;
+}
+
+.group-card {
+  background: var(--secondary-background);
+  width: 100%;
+  border-radius: 0.2rem;
+  box-shadow: 0.1rem 0.1rem 0.2rem var(--shadow-color);
+
+  & .group-card--title {
+    top: 0px;
+    margin: 0.5rem;
+    font-size: 1em;
+  }
+}

@@ -1,0 +1,27 @@
+{% template index.html () (todos) %}
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>CL Trello</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="charset" content="UTF-8"/>
+    <link rel="stylesheet" href="css/index.css"/>
+    <script src="https://unpkg.com/htmx.org@1.9.6" integrity="sha384-FhXw7b6AlE/jyjlZH5iHa/tTe9EpJ1Y55RjcgPbjeWMskSxZt1v9qkxLJWNJaGni" crossorigin="anonymous"></script>
+  </head>
+  <body>
+    <h1>CL Trello</h1>
+    <div class="group-list">
+      {% loop for (groupname . todos) in todos do %}
+      <div class="group-card">
+        <h3 class="group-card--title">{{ groupname }}</h3>
+        <ul class="group-card--todo-list">
+          {% loop for todo in todos do %}
+            <li class="todo-element">{{ todo }}</li>
+          {% end %}
+        </ul>
+      </div>
+      {% end %}
+    <div>
+  </body>
+</html>
+{% end %}

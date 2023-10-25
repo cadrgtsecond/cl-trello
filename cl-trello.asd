@@ -7,11 +7,8 @@
   :depends-on (ten ningle clack)
   :defsystem-depends-on (ten)
   :components ((:module "src"
-                :depends-on ("templates")
-                :components
-                ((:file "main")))
-               (:module "templates"
                 :serial t
                 :components
-                ((:file "main")
-                 (:ten-template "index" :file-extension "html" :package :cl-trello.templates)))))
+                ((:file "template-package")
+                 (:ten-template "templates" :file-extension "html" :package :cl-trello.templates)
+                 (:file "main")))))
