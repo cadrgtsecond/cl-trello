@@ -1,0 +1,2 @@
+*.lisp
+!main.lisp
