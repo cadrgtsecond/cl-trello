@@ -22,6 +22,8 @@
       :backtrace
       (:static :path "/css/"
                :root #p"css/")
+      (:static :path "/vendor/"
+               :root #p"vendor/")
       *app*)
     :server :hunchentoot))
 
