@@ -4,6 +4,7 @@
   --secondary-background: #FAFAFA; /* gray 50 */
   --shadow-color: #B0BEC5; /* blue gray 200 */
   --text-color: #37474F; /* blue gray 800 */
+  --primary-color: #0D47A1; /* light blue 900 */
 }
 
 * {
@@ -30,12 +31,42 @@ body {
 .group-card {
   background: var(--secondary-background);
   width: 100%;
+  padding: 0.5rem;
+
   border-radius: 0.2rem;
   box-shadow: 0.1rem 0.1rem 0.2rem var(--shadow-color);
+}
+.group-card__title {
+  top: 0;
+  font-size: 1rem;
+}
+.group-card__todo-list {
+  padding-left: 0;
+  list-style-type: none;
+}
 
-  & .group-card--title {
-    top: 0px;
-    margin: 0.5rem;
-    font-size: 1em;
-  }
+
+.add-todo-form {
+  display: flex;
+  gap: 1em;
+}
+
+.add-todo-form input {
+  background: var(--primary-background);
+  width: auto;
+  border: 0;
+  font-size: 1.3rem;
+  flex-grow: 1;
+}
+
+.add-todo-form button {
+  height: 1.6rem;
+  width: 1.6rem;
+  font-size: 1.3rem;
+
+  align-self: center;
+  background: var(--primary-color);
+  color: var(--primary-background);
+  border: 0;
+  border-radius: 0.2rem;
 }

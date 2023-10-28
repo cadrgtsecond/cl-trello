@@ -1,19 +1,28 @@
 (defpackage cl-trello
-  (:use :cl))
+  (:use :cl)
+  (:local-nicknames (:model cl-trello.model)
+                    (:templates cl-trello.templates)))
 (in-package :cl-trello)
 
 (defvar *app* (make-instance 'ningle:app))
 
+(setf (ningle:route *app* "/" :method :GET)
+  (constantly '(301 (:location "/todos") (""))))
+
 (setf (ningle:route *app* "/todos" :method :GET)
   (lambda (params)
     (declare (ignore params))
-    `(200 () (,(cl-trello.templates:index.html
-                 `(("Helpful Info" "What is this?" "Target launch date: ")
-                   ("To Do" "Add Envy" "Support custom groups")
-                   ("In Progress" "Work on getting it done")
-                   ("Ready for Launch")))))))
-(setf (ningle:route *app* "/" :method :GET)
-  (constantly '(301 (:location "/todos") (""))))
+    `(200 () (,(templates:index.html (model:get-todos))))))
+
+(setf (ningle:route *app* "/groups/:group" :method :POST)
+  (lambda (params)
+    (let ((desc (cdr (assoc "desc" params :test #'string=)))
+          (group (cdr (assoc :group params :test #'string=))))
+       (if (eql (length desc) 0)
+           `(400 () ())
+           (progn
+             (model:create-todo desc group)
+             (templates:todo-element desc))))))
 
 (defun start ()
   (clack:clackup
