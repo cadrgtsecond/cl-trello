@@ -1,7 +1,8 @@
 (defpackage cl-trello
   (:use :cl)
   (:local-nicknames (:model cl-trello.model)
-                    (:templates cl-trello.templates)))
+                    (:templates cl-trello.templates)
+                    (:a alexandria)))
 (in-package :cl-trello)
 
 (defvar *app* (make-instance 'ningle:app))
@@ -18,11 +19,9 @@
   (lambda (params)
     (let ((desc (cdr (assoc "desc" params :test #'string=)))
           (group (cdr (assoc :group params :test #'string=))))
-       (if (eql (length desc) 0)
-           `(400 () ())
-           (progn
-             (model:create-todo desc group)
-             (templates:todo-element desc))))))
+      (a:if-let (todo (model:create-todo group desc))
+        (templates:todo-element todo)
+        `(400 () ())))))
 
 (defun start ()
   (clack:clackup
