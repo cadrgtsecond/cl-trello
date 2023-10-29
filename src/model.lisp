@@ -1,7 +1,7 @@
 (defpackage cl-trello.model
   (:use :cl :sxql)
   (:documentation "Structs and functions to pull data from the database")
-  (:export get-todos create-todo))
+  (:export todo get-todos create-todo))
 (in-package :cl-trello.model)
 
 (mito:connect-toplevel :sqlite3 :database-name #p"db.sqlite3")

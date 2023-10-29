@@ -1,5 +1,11 @@
 {% template todo-element () (todo) %}
-  <li class="todo-element">{{ todo.desc }}</li>
+  <li class="todo-element">
+    <button hx-delete="/todos/{{ todo.id }}"
+            hx-target="closest li"
+            hx-swap="outerHTML"
+            class="todo-element__button">-</button>
+    {{ todo.desc }}
+  </li>
 {% end %}
 
 {% template group-card () (group todos) %}

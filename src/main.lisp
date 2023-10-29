@@ -23,6 +23,11 @@
         (templates:todo-element todo)
         `(400 () ())))))
 
+(setf (ningle:route *app* "/todos/:id" :method :DELETE)
+  (lambda (params)
+    (let ((id (cdr (assoc :id params))))
+      (mito:delete-dao (make-instance 'model:todo :id id)))))
+
 (defun start ()
   (clack:clackup
     ;; TODO: Use Envy
