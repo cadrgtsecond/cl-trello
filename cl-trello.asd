@@ -4,7 +4,7 @@
   :description "A clone of Trello with Common Lisp and HTMX"
   :author "Abhinav Krishna <abhinavkrishnacr2020@gmail.com>"
   :version "0.0.1"
-  :depends-on (flute ningle clack mito)
+  :depends-on (flute lass ningle clack mito iterate alexandria)
   :components ((:module "src"
                 :serial t
                 :components
