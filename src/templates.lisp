@@ -23,6 +23,14 @@
   :height 100vh
   :color (:var --text-color)
   :background (:var --primary-background))
+
+(defcss (nice-button (:in *index.css*))
+  ;; Reset notrmal styles
+  :border none
+
+  :background (:var --primary-color)
+  :color (:var --primary-background)
+  :border-radius (:var --radius-2))
         
 (defmacro with-page (&rest body)
   `(spinneret:with-html
@@ -41,30 +49,18 @@
   :gap (:var --size-fluid-1)
 
   (button
-    ;; Reset notrmal styles
-    :padding none
-    :border none
-
     :width (:var --size-6)
     :height (:var --size-6)
     :font-size (:var --font-size-4)
+    :align-self center))
 
-    :align-self center
-    :background (:var --primary-color)
-    :color (:var --primary-background)
-    :border-radius (:var --radius-2))
-  (input
-    :background (:var --primary-background)
-    :border 0px
-    :font-size (:var --size-6)
-    :flex-grow 1))
-
-(defun todo-element (todo)
+(defun todo-element (todo group)
   "A single todo element. See `group-card` for the styling"
   (spinneret:with-html
     (:li :class (style-class todo-element-s)
       (:button
-        :hx-delete (format nil "/todos/~a" nil)
+        :class (style-class nice-button)
+        :hx-delete (format nil "/todos/~a" group)
         :hx-target "closest li"
         :hx-swap "outerHTML" "-")
       (model:todo-desc todo))))
@@ -84,14 +80,38 @@
     :list-style-type none
     :line-height (:var --font-lineheight-5)))
 
+(defcss (todo-form (:in *index.css*))
+  :display flex
+  :gap (:var --size-2)
+  :height (:var --size-6)
+
+  (input
+    :background (:var --gray-1)
+    :border (:var --border-size-1) solid (:var --gray-4)
+    :flex-grow 1
+    :font-size (:var --font-size-3)
+    :border-radius (:var --radius-2))
+  ((:and input :focus)
+    :outline (:var --border-size-1) solid (:var --gray-9))
+  (button
+    :width (:var --size-6)
+    :font-size (:var --font-size-4)))
+
 (defun group-card (group todos)
   (spinneret:with-html
     (:div
       :class (style-class group-card-s)
       (:h3 (model:group-desc group))
-      (:ul '()
+      (:ul
         (loop for todo in todos
-              collect (todo-element todo))))))
+              collect (todo-element todo (model:group-id group))))
+      (:form
+        :class (style-class todo-form)
+        :hx-post (format nil "/groups/~a" (model:group-id group))
+        :hx-target "previous ul"
+        :hx-swap "beforeend"
+        (:input :name "desc")
+        (:button :class (style-class nice-button) :type "submit" "+")))))
 
 (defcss (group-container (:in *index.css*))
   :display flex

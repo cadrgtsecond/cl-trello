@@ -1,7 +1,7 @@
 (defpackage cl-trello.model
   (:use :cl :sxql)
   (:documentation "Structs and functions to pull data from the database")
-  (:export todo get-todos create-todo todo-desc group-desc))
+  (:export todo get-todos create-todo todo-desc group-desc group-id))
 (in-package :cl-trello.model)
 
 (mito:connect-toplevel :sqlite3 :database-name #p"db.sqlite3")
@@ -31,7 +31,7 @@
 (progn
   (create-todo "HI" "What is this?")
   (create-todo "HI" "Target launch date: ")
-  (create-todo "TD" "Add Envy")
+  (create-todo "TD" "Add some blink")
   (create-todo "TD" "Support custom groups")
   (create-todo "IP" "In Progress")
   (create-todo "IP" "Get it done"))
@@ -39,13 +39,11 @@
 (defun create-todo (group desc)
   (mito:create-dao 'todo :group (make-instance 'todo-group :id group) :desc desc))
 
-;; TODO: Improve this shitty code
 (defun get-todos ()
-  (let* ((groups (mito:select-dao 'todo-group))
-         (res (mapcar 'list groups))
-         (todos (mito:select-dao 'todo
-                 (mito:includes 'todo-group))))
-    (loop
-         for todo in todos
-         do (push todo (cdr (assoc (todo-group todo) res :test #'group=)))
-         finally (return res))))
+  (loop for g in (serapeum:assort
+                   (mito:select-dao 'todo
+                     (mito:includes 'todo-group))
+
+                   :key #'todo-group
+                   :test #'group=)
+        collect (cons (todo-group (car g)) g)))

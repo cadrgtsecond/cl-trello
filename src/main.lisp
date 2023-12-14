@@ -27,8 +27,10 @@
   (lambda (params)
     (let ((desc (cdr (assoc "desc" params :test #'string=)))
           (group (cdr (assoc :group params :test #'string=))))
+      (check-type desc string)
+      (check-type group string)
       (a:if-let (todo (model:create-todo group desc))
-        (ok-html (templates:todo-element todo))
+        (ok-html (templates:todo-element todo group))
         `(400 () ())))))
 
 (setf (ningle:route *app* "/todos/:id" :method :DELETE)
