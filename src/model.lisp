@@ -1,7 +1,7 @@
 (defpackage cl-trello.model
   (:use :cl :sxql)
   (:documentation "Structs and functions to pull data from the database")
-  (:export todo get-todos create-todo todo-desc group-desc group-id))
+  (:export todo get-todos create-todo todo-desc group-desc group-id todo-id))
 (in-package :cl-trello.model)
 
 (mito:connect-toplevel :sqlite3 :database-name #p"db.sqlite3")
@@ -15,10 +15,7 @@
   ((desc :col-type :text)
    (done-p :col-type :boolean
            :initform nil)
-   (group :col-type todo-group)))
-
-(defun group= (g1 g2)
-  (string= (group-id g1) (group-id g2)))
+   (group :references (todo-group id))))
 
 #+nil
 (progn
@@ -37,13 +34,38 @@
   (create-todo "IP" "Get it done"))
 
 (defun create-todo (group desc)
-  (mito:create-dao 'todo :group (make-instance 'todo-group :id group) :desc desc))
+  (mito:create-dao 'todo :group group :desc desc))
+
+(defun plist->dao (class plist &rest mappings)
+  "Useful function to convert a plist into a mito type. See `get-todos` for an example"
+  (apply
+    #'mito:make-dao-instance
+    class
+    (loop for (key attr) on mappings by #'cddr
+          appending `(,key ,(getf plist attr)))))
+(defun plist->dao* (class &rest mappings)
+  "`plist->dao` but curried"
+  (lambda (i) (apply #'plist->dao class i mappings)))
+#+nil
+(describe
+  (plist->dao
+    'todo
+    '(:GROUP "HI" :GROUP-DESC "Helpful Info" :DESC "What is this?" :ID 1 :DONE-P 0)
+    :id :id
+    :desc :desc))
 
 (defun get-todos ()
-  (loop for g in (serapeum:assort
-                   (mito:select-dao 'todo
-                     (mito:includes 'todo-group))
-
-                   :key #'todo-group
-                   :test #'group=)
-        collect (cons (todo-group (car g)) g)))
+  (mapcar
+    (lambda (g)
+      (list*
+         (plist->dao 'todo-group (car g) :id :group :desc :group_desc)
+         (mapcar (plist->dao* 'todo :desc :desc :id :id) g)))
+    (serapeum:assort
+      (mito:retrieve-by-sql
+        (select ((:as :todo_group.id :group)
+                 (:as :todo_group.desc :group_desc)
+                 :todo.desc :todo.id :done_p)
+          (from :todo_group)
+          (left-join :todo :on (:= :todo_group.id :group))))
+      :key (lambda (e) (getf e :group))
+      :test #'string=)))

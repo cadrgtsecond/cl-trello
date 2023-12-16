@@ -30,7 +30,7 @@
       (check-type desc string)
       (check-type group string)
       (a:if-let (todo (model:create-todo group desc))
-        (ok-html (templates:todo-element todo group))
+        (ok-html (templates:todo-element todo))
         `(400 () ())))))
 
 (setf (ningle:route *app* "/todos/:id" :method :DELETE)

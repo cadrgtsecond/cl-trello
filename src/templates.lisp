@@ -54,13 +54,13 @@
     :font-size (:var --font-size-4)
     :align-self center))
 
-(defun todo-element (todo group)
+(defun todo-element (todo)
   "A single todo element. See `group-card` for the styling"
   (spinneret:with-html
     (:li :class (style-class todo-element-s)
       (:button
         :class (style-class nice-button)
-        :hx-delete (format nil "/todos/~a" group)
+        :hx-delete (format nil "/todos/~a" (mito:object-id todo))
         :hx-target "closest li"
         :hx-swap "outerHTML" "-")
       (model:todo-desc todo))))
@@ -104,7 +104,8 @@
       (:h3 (model:group-desc group))
       (:ul
         (loop for todo in todos
-              collect (todo-element todo (model:group-id group))))
+              when (mito:object-id todo)
+              collect (todo-element todo)))
       (:form
         :class (style-class todo-form)
         :hx-post (format nil "/groups/~a" (model:group-id group))
