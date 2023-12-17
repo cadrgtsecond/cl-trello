@@ -6,6 +6,7 @@
 (in-package cl-trello.templates)
 
 (push "hx-" spinneret:*unvalidated-attribute-prefixes*)
+(push "js-" spinneret:*unvalidated-attribute-prefixes*)
 
 (defparameter *index.css* (make-css-file))
 
@@ -21,6 +22,8 @@
 (defcss (body (:global t) (:in *index.css*))
   :width auto
   :height 100vh
+  :padding (:var --size-2)
+  :margin 0
   :color (:var --text-color)
   :background (:var --primary-background))
 
@@ -32,7 +35,7 @@
   :color (:var --primary-background)
   :border-radius (:var --radius-2))
         
-(defmacro with-page (&rest body)
+(defmacro with-page (head &rest body)
   `(spinneret:with-html
     (:doctype)
     (:html
@@ -41,7 +44,8 @@
         (:meta :name "charset" :content "UTF-8")
         (:link :rel "stylesheet" :href "/vendor/openprops.min.css")
         (:link :rel "stylesheet" :href "/css/index.css")
-        (:script :src "/vendor/htmx.js" ""))
+        (:script :src "/vendor/htmx.js" "")
+        ,@head)
       (:body ,@body))))
 
 (defcss (todo-element-s (:in *index.css*))
@@ -58,6 +62,7 @@
   "A single todo element. See `group-card` for the styling"
   (spinneret:with-html
     (:li :class (style-class todo-element-s)
+      (:input :type "hidden" :name "item" :value (mito:object-id todo))
       (:button
         :class (style-class nice-button)
         :hx-delete (format nil "/todos/~a" (mito:object-id todo))
@@ -102,10 +107,14 @@
     (:div
       :class (style-class group-card-s)
       (:h3 (model:group-desc group))
-      (:ul
-        (loop for todo in todos
-              when (mito:object-id todo)
-              collect (todo-element todo)))
+      (:form
+        :hx-put (format nil "/groups/~a" (model:group-id group))
+        :hx-trigger "sort end"
+        (:ul
+          :js-todos t
+          (loop for todo in todos
+                when (mito:object-id todo)
+                collect (todo-element todo))))
       (:form
         :class (style-class todo-form)
         :hx-post (format nil "/groups/~a" (model:group-id group))
@@ -122,6 +131,9 @@
 
 (defun index (todos)
   (with-page
+     ((:title "Todos")
+      (:script :src "/vendor/sortable.js")
+      (:script :defer "" :src "/js/index.js" ""))
     (:h1 "CL Trello")
     (:div
       :class (style-class group-container)

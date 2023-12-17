@@ -12,10 +12,12 @@
   (:conc-name group-))
 
 (mito:deftable todo ()
-  ((desc :col-type :text)
+  ((order :col-type :integer)
+   (desc :col-type :text)
    (done-p :col-type :boolean
            :initform nil)
-   (group :references (todo-group id))))
+   (group :references (todo-group id)))
+(:unique-keys (order group)))
 
 #+nil
 (progn
@@ -34,7 +36,20 @@
   (create-todo "IP" "Get it done"))
 
 (defun create-todo (group desc)
-  (mito:create-dao 'todo :group group :desc desc))
+  (mito:create-dao 'todo
+                   :group group
+                   :desc desc
+                   :order (fields
+                            (:coalesce
+                              (select ((:+ 1 (:max :order)))
+                                (from :todo)
+                                (where (:= :group group)))
+                              0))))
+#+nil
+(insert-into :todo
+  (set= :group "HI"
+        :desc "Desc"
+        :order (fields (select ((:+ 1 (:max :order))) (from :todo)))))
 
 (defun plist->dao (class plist &rest mappings)
   "Useful function to convert a plist into a mito type. See `get-todos` for an example"
@@ -58,14 +73,15 @@
   (mapcar
     (lambda (g)
       (list*
-         (plist->dao 'todo-group (car g) :id :group :desc :group_desc)
+         (plist->dao 'todo-group (car g) :id :group :desc :group-desc)
          (mapcar (plist->dao* 'todo :desc :desc :id :id) g)))
     (serapeum:assort
       (mito:retrieve-by-sql
         (select ((:as :todo_group.id :group)
-                 (:as :todo_group.desc :group_desc)
+                 (:as :todo_group.desc :group-desc)
                  :todo.desc :todo.id :done_p)
           (from :todo_group)
-          (left-join :todo :on (:= :todo_group.id :group))))
+          (left-join :todo :on (:= :todo_group.id :group))
+          (order-by :group :order)))
       :key (lambda (e) (getf e :group))
       :test #'string=)))

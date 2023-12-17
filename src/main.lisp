@@ -31,7 +31,19 @@
       (check-type group string)
       (a:if-let (todo (model:create-todo group desc))
         (ok-html (templates:todo-element todo))
-        `(400 () ())))))
+        `(500 () ())))))
+
+(setf (ningle:route *app* "/groups/:group" :method :PUT)
+  (lambda (params)
+    (let ((todos (loop for p in params
+                       when (string= (car p) "item")
+                       collect (parse-integer (cdr p))))
+          (group (cdr (assoc :group params))))
+      (print todos)
+      (print group)
+      (print "------------")
+      (finish-output)
+    `(204 ()))))
 
 (setf (ningle:route *app* "/todos/:id" :method :DELETE)
   (lambda (params)
@@ -44,6 +56,8 @@
       :backtrace
       (:static :path "/vendor/"
                :root #p"vendor/")
+      (:static :path "/js/"
+               :root #p"js/")
       *app*)
     :server :hunchentoot))
 
