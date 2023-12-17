@@ -109,7 +109,7 @@
       (:h3 (model:group-desc group))
       (:form
         :hx-put (format nil "/groups/~a" (model:group-id group))
-        :hx-trigger "sort end"
+        :hx-trigger "end, add"
         (:ul
           :js-todos t
           (loop for todo in todos

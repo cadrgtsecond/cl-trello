@@ -35,14 +35,13 @@
 
 (setf (ningle:route *app* "/groups/:group" :method :PUT)
   (lambda (params)
-    (let ((todos (loop for p in params
-                       when (string= (car p) "item")
-                       collect (parse-integer (cdr p))))
+    (let ((todos (iter (for p in params)
+                       (with count = 0)
+                       (when (string= (car p) "item")
+                         (incf count)
+                         (collect (cons count (parse-integer (cdr p)))))))
           (group (cdr (assoc :group params))))
-      (print todos)
-      (print group)
-      (print "------------")
-      (finish-output)
+    (model:reorder-todos todos group)
     `(204 ()))))
 
 (setf (ningle:route *app* "/todos/:id" :method :DELETE)

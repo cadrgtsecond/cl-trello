@@ -1,7 +1,14 @@
 (defpackage cl-trello.model
   (:use :cl :sxql)
   (:documentation "Structs and functions to pull data from the database")
-  (:export todo get-todos create-todo todo-desc group-desc group-id todo-id))
+  (:export todo
+           get-todos
+           reorder-todos
+           create-todo
+           todo-desc
+           group-desc
+           group-id
+           todo-id))
 (in-package :cl-trello.model)
 
 (mito:connect-toplevel :sqlite3 :database-name #p"db.sqlite3")
@@ -85,3 +92,11 @@
           (order-by :group :order)))
       :key (lambda (e) (getf e :group))
       :test #'string=)))
+
+(defun reorder-todos (todos group)
+  (dbi:with-transaction mito:*connection*
+    ;; TODO: Currently, reordering todos requires updating every single element manually
+    ;; The more correct way to do this would be to just update two elements and let a
+    ;; trigger update everything else
+    (loop for (ord . id) in todos
+          do (mito:update-dao (make-instance 'todo :id id :order ord :group group)))))
