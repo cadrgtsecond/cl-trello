@@ -26,32 +26,33 @@
 (setf (ningle:route *app* "/groups/:group" :method :POST)
   (lambda (params)
     (let ((desc (cdr (assoc "desc" params :test #'string=)))
-          (group (cdr (assoc :group params :test #'string=))))
+          (group (parse-integer (cdr (assoc :group params :test #'string=)))))
       (check-type desc string)
-      (check-type group string)
+      (check-type group integer)
       (a:if-let (todo (model:create-todo group desc))
         (ok-html (templates:todo-element todo))
         `(500 () ())))))
 
 (setf (ningle:route *app* "/groups/:group" :method :PUT)
   (lambda (params)
-    (let ((todos (iter (for p in params)
-                       (with count = 0)
-                       (when (string= (car p) "item")
-                         (incf count)
-                         (collect (cons count (parse-integer (cdr p)))))))
-          (group (cdr (assoc :group params))))
-    (model:reorder-todos todos group)
-    `(204 ()))))
+    (model:reorder-todos
+     ;; A little repetition is okay
+      :to (parse-integer (cdr (assoc "to" params :test #'string=)))
+      :from (parse-integer (cdr (assoc "from" params :test #'string=)))
+      :oldord (parse-integer (cdr (assoc "oldord" params :test #'string=)))
+      :neword (parse-integer (cdr (assoc "neword" params :test #'string=))))
+    `(204 ())))
 
-(setf (ningle:route *app* "/todos/:id" :method :DELETE)
+(setf (ningle:route *app* "/groups/:group/:order" :method :DELETE)
   (lambda (params)
-    (let ((id (cdr (assoc :id params))))
-      (mito:delete-dao (make-instance 'model:todo :id id)))))
+    (let ((group (parse-integer (cdr (assoc :group params))))
+          (order (parse-integer (cdr (assoc :order params)))))
+      (mito:delete-dao (make-instance 'model:todo :group group :order order)))))
 
 (defun start ()
   (clack:clackup
     (lack:builder
+      (:mito '(:sqlite3 :database-name "db.sqlite3"))
       :backtrace
       (:static :path "/vendor/"
                :root #p"vendor/")

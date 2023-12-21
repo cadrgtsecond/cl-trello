@@ -59,13 +59,13 @@
     :align-self center))
 
 (defun todo-element (todo)
-  "A single todo element. See `group-card` for the styling"
+  "A single todo element"
   (spinneret:with-html
     (:li :class (style-class todo-element-s)
-      (:input :type "hidden" :name "item" :value (mito:object-id todo))
       (:button
         :class (style-class nice-button)
-        :hx-delete (format nil "/todos/~a" (mito:object-id todo))
+        :hx-delete (format nil "/groups/~a/~a" (model:todo-group todo)
+                                              (model:todo-order todo))
         :hx-target "closest li"
         :hx-swap "outerHTML" "-")
       (model:todo-desc todo))))
@@ -103,18 +103,20 @@
     :font-size (:var --font-size-4)))
 
 (defun group-card (group todos)
+  "A card containing many todos"
   (spinneret:with-html
     (:div
       :class (style-class group-card-s)
       (:h3 (model:group-desc group))
-      (:form
+      (:ul
         :hx-put (format nil "/groups/~a" (model:group-id group))
-        :hx-trigger "end, add"
-        (:ul
-          :js-todos t
-          (loop for todo in todos
-                when (mito:object-id todo)
-                collect (todo-element todo))))
+        :hx-trigger "reordered"
+        :hx-vals "js:{to: event.to, from: event.from, oldord: event.oldord, neword: event.neword}"
+        :data-groupid (model:group-id group)
+        :js-todos t
+        (loop for todo in todos
+              when (model:todo-order todo)
+              collect (todo-element todo)))
       (:form
         :class (style-class todo-form)
         :hx-post (format nil "/groups/~a" (model:group-id group))

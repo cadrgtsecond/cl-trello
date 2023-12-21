@@ -6,52 +6,58 @@
            reorder-todos
            create-todo
            todo-desc
+           todo-order
+           todo-group
            group-desc
-           group-id
-           todo-id))
+           group-id))
 (in-package :cl-trello.model)
 
 (mito:connect-toplevel :sqlite3 :database-name #p"db.sqlite3")
+
 (mito:deftable todo-group ()
-  ((id :col-type :text
-       :primary-key t)
+  ((id :col-type :integer
+       :primary-key t
+       :initform (fields (select ((:coalesce (:+ 1 (:max :id)) 0))
+                           (from :todo_group))))
    (desc :col-type :text))
-  (:conc-name group-))
+(:conc-name group-)
+(:documentation "A group of todos. The id indicates the ordering"))
 
 (mito:deftable todo ()
   ((order :col-type :integer)
    (desc :col-type :text)
    (done-p :col-type :boolean
            :initform nil)
-   (group :references (todo-group id)))
-(:unique-keys (order group)))
+   (group :references todo-group))
+(:primary-key order group))
+
+(defmethod initialize-instance :after ((self todo) &key id group)
+  "Ensure id is incrementing and unique"
+  (unless id
+    (setf (todo-order self) (fields
+                               (select ((:coalesce (:+ 1 (:max :todo.order)) 0))
+                                  (from :todo)
+                                  (where (:= :group group)))))))
 
 #+nil
 (progn
-  (mito:create-dao 'todo-group :id "HI" :desc "Helpful Info")
-  (mito:create-dao 'todo-group :id "TD" :desc "To Do")
-  (mito:create-dao 'todo-group :id "IP" :desc "In Progress")
-  (mito:create-dao 'todo-group :id "RL" :desc "Ready for Launch"))
+  (mito:create-dao 'todo-group :desc "Helpful Info")
+  (mito:create-dao 'todo-group :desc "To Do")
+  (mito:create-dao 'todo-group :desc "In Progress")
+  (mito:create-dao 'todo-group :desc "Ready for Launch"))
 
 #+nil
 (progn
-  (create-todo "HI" "What is this?")
-  (create-todo "HI" "Target launch date: ")
-  (create-todo "TD" "Add some blink")
-  (create-todo "TD" "Support custom groups")
-  (create-todo "IP" "In Progress")
-  (create-todo "IP" "Get it done"))
+  (create-todo 0 "What is this?")
+  (create-todo 0 "Target launch date: ")
+  (create-todo 1 "Add some blink")
+  (create-todo 1 "Support custom groups")
+  (create-todo 1 "Setup end to end testing")
+  (create-todo 2 "In Progress")
+  (create-todo 2 "Get it done"))
 
 (defun create-todo (group desc)
-  (mito:create-dao 'todo
-                   :group group
-                   :desc desc
-                   :order (fields
-                            (:coalesce
-                              (select ((:+ 1 (:max :order)))
-                                (from :todo)
-                                (where (:= :group group)))
-                              0))))
+  (mito:create-dao 'todo :group group :desc desc))
 #+nil
 (insert-into :todo
   (set= :group "HI"
@@ -68,35 +74,28 @@
 (defun plist->dao* (class &rest mappings)
   "`plist->dao` but curried"
   (lambda (i) (apply #'plist->dao class i mappings)))
-#+nil
-(describe
-  (plist->dao
-    'todo
-    '(:GROUP "HI" :GROUP-DESC "Helpful Info" :DESC "What is this?" :ID 1 :DONE-P 0)
-    :id :id
-    :desc :desc))
 
 (defun get-todos ()
   (mapcar
     (lambda (g)
       (list*
          (plist->dao 'todo-group (car g) :id :group :desc :group-desc)
-         (mapcar (plist->dao* 'todo :desc :desc :id :id) g)))
+         (mapcar (plist->dao* 'todo :group :group :order :order :desc :desc) g)))
     (serapeum:assort
       (mito:retrieve-by-sql
         (select ((:as :todo_group.id :group)
                  (:as :todo_group.desc :group-desc)
-                 :todo.desc :todo.id :done_p)
+                 :todo.desc :todo.order :done_p)
           (from :todo_group)
-          (left-join :todo :on (:= :todo_group.id :group))
-          (order-by :group :order)))
-      :key (lambda (e) (getf e :group))
-      :test #'string=)))
+          (left-join :todo :on (:= :todo_group.id :todo.group))
+          (order-by :group :todo.order)))
+      :key (lambda (e) (getf e :group)))))
 
-(defun reorder-todos (todos group)
+(defun reorder-todos (&key to from neword oldord)
+  "Reorders todos"
   (dbi:with-transaction mito:*connection*
-    ;; TODO: Currently, reordering todos requires updating every single element manually
-    ;; The more correct way to do this would be to just update two elements and let a
-    ;; trigger update everything else
-    (loop for (ord . id) in todos
-          do (mito:update-dao (make-instance 'todo :id id :order ord :group group)))))
+    (mito:execute-sql
+      (update 'todo
+        (set= :order (:+ :order 1)
+              :group to)
+        (where (:and (:= :order oldord) (:= :group from)))))))
